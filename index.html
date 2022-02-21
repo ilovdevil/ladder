@@ -1,0 +1,717 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>복불복 사디리</title>
+<style>
+#id_ladder {
+    width: 1100px;
+    height: 620px;
+    /* border: 1px solid black; */
+    /* overflow: auto; */
+    background-color: black;
+    float: left;
+    position: relative;
+}
+canvas {
+    width: auto;
+    height: auto;
+    position: absolute;
+}
+#id_money {
+    width: 230px;
+    height: 620px;
+    border: 1px solid black;
+    /* background-color: black; */
+    float: left;
+    position: relative;
+}
+</style>
+
+<script language=JavaScript>
+/*
+    아이템 : 껌(속도감소), 바나나(속도증가), 모래시계(화면뒤집기)
+    복불복 : 줄(세로선)의 재료를 다양하게(얼음줄(속도UP), 밧줄(속도DOWN), 천줄(사다리끊어짐), 탯줄(짱!) 등)
+*/
+
+window.location.href.search( /(?:File|http|https):\/+([A-Z]:)?(.*)\/(.*)/i );
+var PROGRAM_PATH = (RegExp.$1 + RegExp.$2).replace( "%20", " " );
+
+const ITEM = [  PROGRAM_PATH + "/images/item_thunder.jpg", 
+                PROGRAM_PATH + "/images/item_gum.jpg",
+                PROGRAM_PATH + "/images/item_plus.jpg",
+                PROGRAM_PATH + "/images/item_minus.jpg"
+            ];
+
+const TYPE_SPDUP        =   0;
+const TYPE_SPDDN        =   1;
+const TYPE_PLUS         =   2;
+const TYPE_MINUS        =   3;
+
+const MAX_PLAYER        =   10;
+const MAX_LADDER        =   30;
+const LAD_TOP           =   30;
+const LAD_LEFT          =   50;
+const MOVE_TICK         =   2;
+
+const DIR_UP            =   0;
+const DIR_RIGHT         =   1;
+const DIR_DOWN          =   2;
+const DIR_LEFT          =   3;
+
+const DFT_SPEED         =   20;
+
+var gCanvas, gCtx;
+
+var gLadder;
+var gtTimer;
+var gnDiffH, gnDiffV;
+
+var gPlayer, gItem, gMoney, gCollectAmt;
+
+var gSound = new Audio( PROGRAM_PATH + "/images/Sound/ucw_chat.wav" );
+
+function fInit()
+{
+    var nPlayer = parseInt( document.getElementById("id_player").value );
+    if( nPlayer < 2  ||  nPlayer > 10 ) {
+        alert( "적당히 합시다." );
+        document.getElementById("id_player").focus();
+        return;
+    }
+
+    var oType = document.getElementById("id_type");
+    var nType = oType.options[oType.selectedIndex].value;
+
+    gCanvas = document.getElementById("id_can");
+    gCtx = gCanvas.getContext("2d");
+
+    gLadder = new Array( nPlayer );
+    for( var i=0; i<nPlayer; i++ ) {
+        gLadder[i] = new Array( MAX_LADDER );
+        for( var j=0; j<MAX_LADDER; j++ ) {
+            gLadder[i][j] = 0;
+        }
+    }
+
+    gnDiffH = parseInt( (gCanvas.width-(LAD_LEFT*2)) / (nPlayer-1) );
+    gnDiffV = parseInt( (gCanvas.height-(LAD_TOP*2)) / (MAX_LADDER-1) );
+
+    gCollectAmt = 0;
+
+    if( gnDiffH % 2 )  gnDiffH++;
+    if( gnDiffV % 2 )  gnDiffV++;
+    console.log( "가로간격 : " + gnDiffH + " , 세로간격 : " + gnDiffV );
+
+    gPlayer = [];
+    for( var i=0; i<nPlayer; i++ ) {
+        gPlayer[i] = {};
+        gPlayer[i].canvas   = document.getElementById("id_player_" + (i+1));
+        gPlayer[i].ctx      = gPlayer[i].canvas.getContext("2d");
+        gPlayer[i].img      = new Image();
+        gPlayer[i].img.src  = PROGRAM_PATH + "/images/user_" + (i+1) + ".png";
+        gPlayer[i].x        = LAD_LEFT + (i*gnDiffH) - 10;
+        gPlayer[i].y        = LAD_TOP - 10;
+        gPlayer[i].direct   = DIR_DOWN;
+        if( nType == 1 ) {
+            gPlayer[i].speed = DFT_SPEED;
+        }
+        else {
+            gPlayer[i].speed = 1 + parseInt(Math.random() * 41);
+            if( gPlayer[i].speed % 2 )  gPlayer[i].speed++;
+        }
+    }
+
+    // Edge(가로선) 생성
+    var nEdge, nEdgeNo;
+    var nEdgeCount = 0;
+    for( var i=0; i<nPlayer-1; i++ ) {
+        var nEdge = 3 + parseInt(Math.random() * 8);
+        for( var j=0; j<nEdge; j++ ) {
+            nEdgeNo = 2 + parseInt(Math.random() * (MAX_LADDER-4));
+
+            if( gLadder[i][nEdgeNo] != 0 ) {
+                j--; continue;
+            }
+
+            gLadder[i][nEdgeNo] = i + 2;
+            gLadder[i+1][nEdgeNo] = i+1;
+            nEdgeCount++;
+        }
+    }
+
+    // 아이템 생성
+    gItem = [];
+    var nItem = parseInt(nPlayer * ( 40 + parseInt(Math.random() * 61) ) / 100);  // 아이템갯수 = Player수 * (40~100%);
+    var nEdgeNo;
+    for( var i=0; i<nItem; i++ ) {
+        // 아이템이 놓일 위치를 선정한다.
+        while( 1 ) {
+            var j;
+            nEdgeNo = parseInt(Math.random() * nEdgeCount);
+            for( j=0; j<gItem.length; j++ ) {
+                if( gItem[j].edge_no == nEdgeNo ) {
+                    break;
+                }
+            }
+            if( j == gItem.length ) {
+                break;
+            }
+        }
+        
+        gItem[i] = {};
+        gItem[i].edge_no    = nEdgeNo;
+        gItem[i].type       = parseInt(Math.random() * 4 );
+        gItem[i].img        = new Image();
+        gItem[i].img.src    = ITEM[ gItem[i].type ];
+        gItem[i].player     = -1;       // 아이템을 획득한 Player
+
+        console.log( "item-" + (i+1) + " : " + gItem[i].edge_no + " , " + gItem[i].type );
+    }
+
+    // var log = "";
+    // for( var i=0; i<MAX_LADDER; i++ ) {
+    //     log = "";
+    //     for( var j=0; j<nPlayer; j++ ) {
+    //         log += gLadder[j][i] + " , ";
+    //     }
+    //     console.log( log );
+    // }
+
+    if( gtTimer )  clearInterval(gtTimer);
+    gtTimer = null;
+
+    // 메인창 Clear
+    gCtx.clearRect( 0, 0, gCanvas.width, gCanvas.height );
+    gCtx.beginPath();
+    gCtx.fillStyle = "gray";
+    gCtx.fillRect( 0, 0, gCanvas.width, gCanvas.height );
+    gCtx.stroke();
+
+    // Player/당첨금/아이템 창 Clear
+    var canvas, ctx;
+    var aCanvas = [ "id_player_1", "id_player_2", "id_player_3", "id_player_4", "id_player_5", 
+                    "id_player_6", "id_player_7", "id_player_8", "id_player_9", "id_player_10", 
+                    "id_prize", "id_item" ];
+
+    for( var i=0; i<aCanvas.length; i++ ) {
+        canvas = document.getElementById( aCanvas[i] );
+        ctx = canvas.getContext("2d");
+        ctx.fillStyle = "gray";
+        ctx.clearRect( 0, 0, canvas.width, canvas.height );
+    }
+
+    drawLadder( nPlayer );
+}
+
+function drawLadder( nPlayer )
+{
+    // 1. 세로선
+    for( var i=0; i<nPlayer; i++ ) {
+        gCtx.strokeStyle = "white";
+        gCtx.moveTo( LAD_LEFT + (i*gnDiffH), LAD_TOP );
+        gCtx.lineTo( LAD_LEFT + (i*gnDiffH), gCanvas.height - LAD_TOP );
+        gCtx.stroke();
+    }
+
+    // 2. 가로선
+    for( var i=0; i<nPlayer-1; i++ ) {
+        for( j=0; j<MAX_LADDER; j++ ) {
+            if( gLadder[i][j] == i+2 ) {
+                gCtx.moveTo( LAD_LEFT + (i*gnDiffH), LAD_TOP + (j*gnDiffV) );
+                gCtx.lineTo( LAD_LEFT + ((i+1)*gnDiffH), LAD_TOP+(j*gnDiffV) );
+                gCtx.stroke();
+            }
+        }
+    }
+
+    // 3. PLAYER 표시
+    for( var i=0; i<nPlayer; i++ ) {
+        gPlayer[i].ctx.drawImage( gPlayer[i].img, gPlayer[i].x, gPlayer[i].y, 20, 20 );
+
+        gPlayer[i].ctx.fillStyle = "white";
+        gPlayer[i].ctx.font = "bold 15px 굴림체";
+        gPlayer[i].ctx.fillText( (i+1)+"", gPlayer[i].x+15, gPlayer[i].y+5 );
+        gPlayer[i].ctx.stroke();
+    }
+
+    // 4. 아이템 표시
+    var oType = document.getElementById("id_type");
+    var nType = oType.options[oType.selectedIndex].value;
+
+    if( nType == 3 ) {
+console.log( "ITEM 표시" );
+        var nEdgeNo, bFound;
+        var ctx = document.getElementById("id_item").getContext("2d");
+        for( var k=0; k<gItem.length; k++ ) {
+            nEdgeNo = -1;
+            bFound = false;
+            for( var i=0; i<nPlayer-1; i++ ) {
+                for( j=0; j<MAX_LADDER; j++ ) {
+                    if( gLadder[i][j] > (i+1) ) {
+                        nEdgeNo++;
+
+                        if( nEdgeNo == gItem[k].edge_no ) {
+                            gItem[k].x = LAD_LEFT + (i*gnDiffH) + (gnDiffH/2) - 10;
+                            gItem[k].y = LAD_TOP + (j*gnDiffV) - 10;
+                            ctx.drawImage( gItem[k].img, gItem[k].x, gItem[k].y, 20, 20 );
+                            console.log( "edgeNo = " +nEdgeNo + ", x = " + gItem[k].x + ", Y = " + gItem[k].y );
+                            bFound = true;
+                            break;
+                        }
+                    }
+                }
+
+                if( bFound ) {
+                    break;
+                }
+            }
+        }
+    }
+
+    console.log( "준비 완료" );
+
+    readyPlayer();
+}
+
+function readyPlayer()
+{
+    var html = "";
+
+    html += "<table border=1 cellpadding=0 width=100%>" +
+            "   <tr style='background-color:black'>" +
+            "       <th align=center colspan=5><font color='white'>라인 선택</font></th>" +
+            "   </tr>";
+    
+    for( var i=0; i<gPlayer.length; i++ ) {
+        html += "<tr>" +
+                "   <td width=10% align=center>" + (i+1) + "</td>" +
+                "   <td width=20><img src='" + PROGRAM_PATH + "/images/user_" + (i+1) + ".png' width=20></td>" +
+                "   <td width=25%><input type=text size=4 value='USER_" + (i+1) + "'></td>" +
+                "   <td width=30%><span id=id_prizeitem_" + (i+1) + "></td>" +
+                "   <td align=right><span id=id_prize_" + (i+1) + "></span></td>" +
+                "</tr>";
+    }
+
+    html += "</table>";
+
+    document.getElementById("id_player_choice").innerHTML = html;
+}
+
+function divideMoney()
+{
+    var nTarget = parseInt(document.getElementById("id_target").value.trim());
+    var nUnit = parseInt(document.getElementById("id_unit").options[document.getElementById("id_unit").selectedIndex].value);
+    var bAllowZero = document.getElementById("id_allow_zero").checked;
+    var bAllowParasite = document.getElementById("id_allow_parasite").checked;
+    var oType = document.getElementById("id_type");
+    var nType = oType.options[oType.selectedIndex].value;
+
+    if( document.getElementById("id_target").value.trim().length < 4  ||  nTarget < nUnit ) {
+        alert( "배분단위에 비해 목표금액이 너무 적습니다." );
+        document.getElementById("id_target").focus();
+        return;
+    }
+
+    if( nTarget > 500000 ) {
+        alert( "목표금액이 너무 큽니다. 도박은 카지노에서.." );
+        document.getElementById("id_target").focus();
+        return;
+    }
+    
+    console.log( "배분금액 : " + nTarget + " , 배분단위 : " + nUnit + " , 0원 포함 : " + bAllowZero + " , 심부름 포함 : " + bAllowParasite );
+
+    gMoney = [];
+    for( var i=0; i<gPlayer.length; i++ ) {
+        gMoney[i] = 0;
+    }
+    var nPlayer = gPlayer.length;
+
+    // 0원 할당
+    if( bAllowZero ) {
+        gMoney[ parseInt( Math.random() * nPlayer ) ] = 99999998;
+    }
+
+    // 심부름 할당
+    if( bAllowParasite ) {
+        var inx;
+        while( 1 ) {
+            inx = parseInt( Math.random() * nPlayer );
+            if( gMoney[inx] == 0 ) {
+                gMoney[inx] = 99999999;
+                break;
+            }
+        }
+    }
+
+    // 실제 금액을 배분해야 하는 Player 수
+    if( bAllowZero )  nPlayer--;
+    if( bAllowParasite )  nPlayer--;
+
+    var nTargetUnit = parseInt( nTarget / nUnit );
+    var nRemainAmt = nTarget % nUnit;
+
+    // 일반사다리가 아니면 목표금액 증액
+    if( nType != 1 ) {
+        var nIncPercent = 30 + parseInt( Math.random() * 71 );
+        nTargetUnit = parseInt( nTargetUnit * ((100 + nIncPercent) / 100) );
+    }
+
+    console.log( "nTargetUnit = " + nTargetUnit + " , 잔돈 : " + nRemainAmt );
+
+    // 목표금액 배분
+    var i=0;
+    var order;
+    var nChoicePlayer;
+
+    // Player에 비해 목표금액이 많으면 기본 1유닛씩 배분후에 나머지는 랜덤
+    if( nTargetUnit >= nPlayer*1.5 ) {
+        for( var j=0; j<gMoney.length; j++ ) {
+            if( gMoney[j] < 99999998 ) {
+                gMoney[j]++;
+                i++;
+            }
+        }
+    }
+
+    for( ; i<nTargetUnit; i++ ) {
+        nChoicePlayer = parseInt( Math.random() * nPlayer );
+        order = -1;
+        for( var j=0; j<gMoney.length; j++ ) {
+            if( gMoney[j] < 99999998 ) {
+                order++;
+                if( order == nChoicePlayer ) {
+                    gMoney[j]++;
+                    break;
+                }
+            }
+        }
+    }
+
+    for( var i=0; i<gMoney.length; i++ ) {
+        if( gMoney[i] < 99999998 ) {
+            gMoney[i] *= nUnit;
+        }
+    }
+
+    // 잔돈 배분
+    if( nType == 1 ) {
+        nChoicePlayer = parseInt( Math.random() * nPlayer );
+
+        order = -1;
+        for( var i=0; i<gMoney.length; i++ ) {
+            if( gMoney[i] < 99999998 ) {
+                order++;
+                if( order == nChoicePlayer ) {
+                    gMoney[i] += nRemainAmt;
+                    break;
+                }
+            }
+        }
+    }
+
+    for( var i=0; i<gMoney.length; i++ ) {
+        console.log( i + " : " + gMoney[i] );
+    }
+
+    var canvas = document.getElementById("id_prize");
+    var ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "gray";
+    ctx.clearRect( 0, 0, canvas.width, canvas.height );
+
+    ctx.fillStyle = "white";
+    ctx.font = "bold 15px 굴림체";
+    for( var i=0; i<gMoney.length; i++ ) {
+        if( gMoney[i] == 99999999 ) {
+            ctx.fillText( "심부름", gPlayer[i].x-15, canvas.height-LAD_TOP+20 );
+        }
+        else if( gMoney[i] == 99999998 ) {
+            ctx.fillText( "0", gPlayer[i].x+6, canvas.height-LAD_TOP+20 );
+        }
+        else {
+            ctx.fillText( gMoney[i], gPlayer[i].x-5, canvas.height-LAD_TOP+20 );
+        }
+    }
+    ctx.stroke();
+}
+
+function start()
+{
+    if( !gtTimer ) {
+        gtTimer = setInterval( play, 2 );
+    }
+}
+
+function stop()
+{
+    if( gtTimer ) {
+        clearInterval( gtTimer );
+        gtTimer = null;
+
+        for( var i=0; i<gItem.length; i++ ) {
+            console.log( "ITEM-" + (i+1) + " : X=" + gItem[i].x + " , Y=" + gItem[i].y );
+        }
+
+        for( var i=0; i<gPlayer.length; i++ ) {
+            console.log( "PLAYER-" + (i+1) + " : X=" + gPlayer[i].x + " , Y=" + gPlayer[i].y );
+        }
+
+        console.log( "[아이템 획득 현황]" );
+        for( var i=0; i<gItem.length; i++ ) {
+            console.log( "ITEM-" + (i+1) + " : TYPE=" + gItem[i].type + " , PLAYER=" + (gItem[i].player+1) );
+        }
+    }
+}
+
+function save()
+{
+    var canvas = document.getElementById("id_result");
+    var result = canvas.getContext("2d");
+    result.clearRect( 0, 0, canvas.width, canvas.height );
+
+    var data = gCtx.getImageData( 0, 0, canvas.width, canvas.height );
+    result.putImageData( data, 0, 0 );
+    result.globalCompositeOperation = "xor";
+
+    for( var i=0; i<gPlayer.length; i++ ) {
+        gPlayer[i].img.crossOrigin = "Anonymous";
+        gPlayer[i].img.setAttribute( "crossOrigin", "" );
+        result.drawImage( gPlayer[i].img, gPlayer[i].x, gPlayer[i].y );
+    }
+/*
+    var data = gPlayer[0].ctx.getImageData( 0, 0, canvas.width, canvas.height );
+    result.putImageData( data, 0, 0 );
+
+    for( var i=0; i<gPlayer.length; i++ ) {
+        // gPlayer[i].img.crossOrigin = "Anonymous";
+        gPlayer[i].img.setAttribute( "crossOrigin", "" );
+        result.drawImage( gPlayer[i].img, gPlayer[i].x, gPlayer[i].y );
+    }
+*/
+
+    var gPgmName = "test";
+    var link = document.getElementById("id_save");
+    // link.setAttribute( "download", gPgmName + ".png" );
+    link.download = gPgmName + ".png";
+    // link.setAttribute( "href", gCanvas.toDataURL("image/png") );
+    link.setAttribute( "href", canvas.toDataURL() );
+    console.log( link.download );
+    console.log( gPgmName + ".png" );
+    console.log( link.href );
+    link.click();
+}
+
+var gTime = 0;
+function play()
+{
+    var oType = document.getElementById("id_type");
+    var nType = oType.options[oType.selectedIndex].value;
+
+    gTime += 2;
+    for( var i=0; i<gPlayer.length;i ++ ) {
+        if( gTime % gPlayer[i].speed == 0  &&  gPlayer[i].y <= (gCanvas.height-LAD_TOP-20) ) {
+            gPlayer[i].ctx.clearRect( gPlayer[i].x, gPlayer[i].y-10, gPlayer[i].img.width+20, gPlayer[i].img.height+20 );
+
+            switch( gPlayer[i].direct ) {
+                case DIR_UP    : gPlayer[i].y -= MOVE_TICK; break;
+                case DIR_RIGHT : gPlayer[i].x += MOVE_TICK; break;
+                case DIR_DOWN  : gPlayer[i].y += MOVE_TICK; break;
+                case DIR_LEFT  : gPlayer[i].x -= MOVE_TICK; break;
+            }
+
+            gPlayer[i].ctx.fillText( (i+1)+"", gPlayer[i].x+15, gPlayer[i].y+5 );
+            gPlayer[i].ctx.drawImage( gPlayer[i].img, gPlayer[i].x, gPlayer[i].y, 20, 20 );
+
+            nPlayer = (gPlayer[i].x + 10 - LAD_LEFT) / gnDiffH;
+            nRow = (gPlayer[i].y + 10 - LAD_TOP) / gnDiffV;
+
+            // 끝에 도달 => 금액 확정
+            if( gPlayer[i].y > (gCanvas.height-LAD_TOP-20)) {
+                var o = document.getElementById("id_prize_"+(i+1));
+                var nPrizeAmt = gMoney[nPlayer];
+                var nUnit = parseInt(document.getElementById("id_unit").options[document.getElementById("id_unit").selectedIndex].value);
+
+                if( nPrizeAmt > 99990000 ) {
+                    nPrizeAmt = 0;
+                }
+
+                if( o ) {
+                    for( var j=0; j<gItem.length; j++ ) {
+                        if( gItem[j].player == i ) {
+                            if( gItem[j].type == TYPE_PLUS )  nPrizeAmt += nUnit;
+                            else if( gItem[j].type == TYPE_MINUS )  nPrizeAmt -= nUnit;
+                        }
+                    }
+
+                    if( nPrizeAmt < 0 )  nPrizeAmt = 0;
+                    o.innerHTML = nPrizeAmt;
+                    gCollectAmt += nPrizeAmt;
+                    if( gCollectAmt >= parseInt(document.getElementById("id_target").value) ) {
+                        stop();
+                        alert( "목표금액 이상이 확정되었으므로 게임 종료" );
+                        return;
+                    }
+                }
+            }
+
+            if( gPlayer[i].direct == DIR_DOWN  &&  (gPlayer[i].y+10 - LAD_TOP) % gnDiffV == 0 ) {
+                if( gLadder[nPlayer][nRow] > 0 ) {
+                    if( gLadder[nPlayer][nRow] > (nPlayer+1) )
+                        gPlayer[i].direct = DIR_RIGHT;
+                    else
+                        gPlayer[i].direct = DIR_LEFT;
+                }
+            }
+            else if( (gPlayer[i].direct == DIR_LEFT  ||  gPlayer[i].direct == DIR_RIGHT) ) {
+                if( (gPlayer[i].x+10 - LAD_LEFT) % gnDiffH == 0 ) {
+                    gPlayer[i].direct = DIR_DOWN;
+                }
+                else if( nType == 3 ) {
+                    // 아이템과 충돌했는지 체크
+                    for( var j=0; j<gItem.length; j++ ) {
+                        // if( ( gPlayer[i].y >= gItem[j].y-5  &&  gPlayer[i].y <= gItem[j].y+5 )  &&
+                        if( gItem[j].player == -1  &&
+                            gPlayer[i].y == gItem[j].y  &&
+                            ( (gPlayer[i].x > gItem[j].x  &&  gPlayer[i].x < gItem[j].x+20)  ||
+                              (gPlayer[i].x+20 > gItem[j].x  &&  gPlayer[i].x+20 < gItem[j].x+20) ) ) {
+                            gSound.play();
+
+                            var ctx = document.getElementById("id_item").getContext("2d");
+                            var disp = document.getElementById("id_prizeitem_" + (i+1));
+
+                            gItem[j].player = i;
+                            ctx.clearRect( gItem[j].x, gItem[j].y, 20, 20 );
+                            disp.innerHTML += "<img src='" + ITEM[gItem[j].type] + "' width=20 height=20>";
+                            if( gItem[j].type == TYPE_SPDUP ) {
+                                gPlayer[i].speed /= 2;
+                                if( gPlayer[i].speed % 2 )  gPlayer[i].speed++;
+                            }
+                            else if( gItem[j].type == TYPE_SPDDN ) {
+                                gPlayer[i].speed *= 2;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+</script>
+</head>
+<body onLoad="document.getElementById('id_reset').click()">
+<div style="display:none">
+    <img src="images/user_1.png">
+    <img src="images/user_2.png">
+    <img src="images/user_3.png">
+    <img src="images/user_4.png">
+    <img src="images/user_5.png">
+    <img src="images/user_6.png">
+    <img src="images/user_7.png">
+    <img src="images/user_8.png">
+    <img src="images/user_9.png">
+    <img src="images/user_10.png">
+</div>
+<div id=id_ladder>
+    <canvas id=id_can width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_1 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_2 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_3 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_4 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_5 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_6 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_7 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_8 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_9 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_10 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_prize width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_item width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+</div>
+<div id=id_money>
+<table border=1 cellpadding=0 width=100%>
+    <tr style="background-color:black">
+        <th align=center colspan=2><font color="white">게임 설정</font></th>
+    </tr>
+    <tr>
+        <td align=center>게임 유형</td>
+        <td>
+            <select id=id_type>
+                <option value=1>일반사다리</option>
+                <option value=2>스피드사다리</option>
+                <option value=3 selected>복불복사다리</option>
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td align=center>PLAYER 수</td>
+        <td>
+            <input type=text id=id_player size=1 value=5>
+            <button id=id_reset onClick="fInit(); divideMoney();">리셋</button>
+        </td>
+    </tr>
+</table>
+<br>
+<table border=1 cellpadding=0 width=100%>
+    <tr style="background-color:black">
+        <th align=center colspan=2><font color="white">금액 설정</font></th>
+    </tr>
+    <tr>
+        <td align=center>목표금액</td>
+        <td><input type=text id=id_target size=4 value=12345>원</input></td>
+    </tr>
+    <tr>
+        <td align=center>배분단위</td>
+        <td>
+            <select id=id_unit>
+                <option value=1000 selected> 1,000원</option>
+                <option value=2000> 2,000원</option>
+                <option value=3000> 3,000원</option>
+                <option value=5000> 5,000원</option>
+                <option value=10000> 10,000원</option>
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td align=center>기타</td>
+        <td>
+            <input type=checkbox id=id_allow_zero><label for=id_allow_zero>0원 포함</label><br>
+            <input type=checkbox id=id_allow_parasite><label for=id_allow_parasite>심부름 포함</label>
+        </td>
+    </tr>
+    <!-- <tr>
+        <td colspan=2 align=center><button onClick="divideMoney()">금액배분</button></td>
+    </tr> -->
+</table>
+<br>
+<span id=id_player_choice></span>
+<br>
+<table border=0 cellpadding=0 width=100%>
+    <tr>
+        <td width=100% align=center>
+            <button onClick="start()">시작</button>
+            <button onClick="stop()">중지</button>
+            <button onClick="save()">저장</button>
+        </td>
+    </tr>
+</table>
+</div>
+<a id=id_save></a>
+<canvas id=id_result style="display:none" width=1100 height="620">브라우저가 캔버스를 지원하지 않습니다.</canvas>
+<!-- <div style="display:none">
+    <img src="images/user_1.png">
+    <img src="images/user_2.png">
+    <img src="images/user_3.png">
+    <img src="images/user_4.png">
+    <img src="images/user_5.png">
+    <img src="images/user_6.png">
+    <img src="images/user_7.png">
+    <img src="images/user_8.png">
+    <img src="images/user_9.png">
+    <img src="images/user_10.png">
+</div> -->
+<!-- <div>
+    <a href='https://www.freepik.com/vectors/icon'>Icon vector created by rawpixel.com - www.freepik.com</a>
+</div> -->
+</body>
+</html>
