@@ -163,8 +163,12 @@ function fInit()
         gItem[i] = {};
         gItem[i].edge_no    = nEdgeNo;
         gItem[i].type       = parseInt(Math.random() * 4 );
-        gItem[i].img        = new Image();
-        gItem[i].img.src    = ITEM[ gItem[i].type ];
+        switch( gItem[i].type ) {
+            case TYPE_SPDUP : gItem[i].img = document.getElementById("id_item_thunder"); break;
+            case TYPE_SPDDN : gItem[i].img = document.getElementById("id_item_gum"); break;
+            case TYPE_PLUS  : gItem[i].img = document.getElementById("id_item_plus"); break;
+            case TYPE_MINUS : gItem[i].img = document.getElementById("id_item_minus"); break;
+        }
         gItem[i].player     = -1;       // 아이템을 획득한 Player
 
         console.log( "item-" + (i+1) + " : " + gItem[i].edge_no + " , " + gItem[i].type );
@@ -241,7 +245,6 @@ function drawLadder( nPlayer )
     var nType = oType.options[oType.selectedIndex].value;
 
     if( nType == 3 ) {
-console.log( "ITEM 표시" );
         var nEdgeNo, bFound;
         var ctx = document.getElementById("id_item").getContext("2d");
         for( var k=0; k<gItem.length; k++ ) {
@@ -699,6 +702,13 @@ function play()
 </div>
 <a id=id_save></a>
 <canvas id=id_result style="display:none" width=1100 height="620">브라우저가 캔버스를 지원하지 않습니다.</canvas>
+<canvas id=id_result style="display:none" width=1100 height="620">브라우저가 캔버스를 지원하지 않습니다.</canvas>
+<div style="display:none">
+<img id=id_item_thunder src="images/item_thunder.jpg">
+<img id=id_item_gum src="images/item_gum.jpg">
+<img id=id_item_plus src="images/item_plus.jpg">
+<img id=id_item_minus src="images/item_minus.jpg">
+</div>
 <!-- <div style="display:none">
     <img src="images/user_1.png">
     <img src="images/user_2.png">
