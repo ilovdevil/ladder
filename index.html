@@ -36,6 +36,7 @@ canvas {
 
 window.location.href.search( /(?:File|http|https):\/+([A-Z]:)?(.*)\/(.*)/i );
 var PROGRAM_PATH = (RegExp.$1 + RegExp.$2).replace( "%20", " " );
+alert( PROGRAM_PATH );
 
 const ITEM = [  PROGRAM_PATH + "/images/item_thunder.jpg", 
                 PROGRAM_PATH + "/images/item_gum.jpg",
