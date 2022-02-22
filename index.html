@@ -36,12 +36,11 @@ canvas {
 
 window.location.href.search( /(?:File|http|https):\/+([A-Z]:)?(.*)\/(.*)/i );
 var PROGRAM_PATH = (RegExp.$1 + RegExp.$2).replace( "%20", " " );
-PROGRAM_PATH = "";
 
-const ITEM = [  PROGRAM_PATH + "/images/item_thunder.jpg", 
-                PROGRAM_PATH + "/images/item_gum.jpg",
-                PROGRAM_PATH + "/images/item_plus.jpg",
-                PROGRAM_PATH + "/images/item_minus.jpg"
+const ITEM = [  "./images/item_thunder.jpg", 
+                "./images/item_gum.jpg",
+                "./images/item_plus.jpg",
+                "./images/item_minus.jpg"
             ];
 
 const TYPE_SPDUP        =   0;
@@ -70,7 +69,7 @@ var gnDiffH, gnDiffV;
 
 var gPlayer, gItem, gMoney, gCollectAmt;
 
-var gSound = new Audio( PROGRAM_PATH + "/images/Sound/ucw_chat.wav" );
+var gSound = new Audio( "./images/Sound/ucw_chat.wav" );
 
 function fInit()
 {
@@ -109,8 +108,7 @@ function fInit()
         gPlayer[i] = {};
         gPlayer[i].canvas   = document.getElementById("id_player_" + (i+1));
         gPlayer[i].ctx      = gPlayer[i].canvas.getContext("2d");
-        gPlayer[i].img      = new Image();
-        gPlayer[i].img.src  = PROGRAM_PATH + "/images/user_" + (i+1) + ".png";
+        gPlayer[i].img      = document.getElementById("id_user_"+(i+1));
         gPlayer[i].x        = LAD_LEFT + (i*gnDiffH) - 10;
         gPlayer[i].y        = LAD_TOP - 10;
         gPlayer[i].direct   = DIR_DOWN;
@@ -290,7 +288,7 @@ function readyPlayer()
     for( var i=0; i<gPlayer.length; i++ ) {
         html += "<tr>" +
                 "   <td width=10% align=center>" + (i+1) + "</td>" +
-                "   <td width=20><img src='" + PROGRAM_PATH + "/images/user_" + (i+1) + ".png' width=20></td>" +
+                "   <td width=20><img src='./images/user_" + (i+1) + ".png' width=20></td>" +
                 "   <td width=25%><input type=text size=4 value='USER_" + (i+1) + "'></td>" +
                 "   <td width=30%><span id=id_prizeitem_" + (i+1) + "></td>" +
                 "   <td align=right><span id=id_prize_" + (i+1) + "></span></td>" +
@@ -606,16 +604,21 @@ function play()
 </head>
 <body onLoad="document.getElementById('id_reset').click()">
 <div style="display:none">
-    <img src="images/user_1.png">
-    <img src="images/user_2.png">
-    <img src="images/user_3.png">
-    <img src="images/user_4.png">
-    <img src="images/user_5.png">
-    <img src="images/user_6.png">
-    <img src="images/user_7.png">
-    <img src="images/user_8.png">
-    <img src="images/user_9.png">
-    <img src="images/user_10.png">
+    <img id=id_user_1 src="images/user_1.png">
+    <img id=id_user_2 src="images/user_2.png">
+    <img id=id_user_3 src="images/user_3.png">
+    <img id=id_user_4 src="images/user_4.png">
+    <img id=id_user_5 src="images/user_5.png">
+    <img id=id_user_6 src="images/user_6.png">
+    <img id=id_user_7 src="images/user_7.png">
+    <img id=id_user_8 src="images/user_8.png">
+    <img id=id_user_9 src="images/user_9.png">
+    <img id=id_user_10 src="images/user_10.png">
+
+    <img id=id_item_thunder src="images/item_thunder.jpg">
+    <img id=id_item_gum src="images/item_gum.jpg">
+    <img id=id_item_plus src="images/item_plus.jpg">
+    <img id=id_item_minus src="images/item_minus.jpg">
 </div>
 <div id=id_ladder>
     <canvas id=id_can width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
@@ -702,26 +705,7 @@ function play()
 </div>
 <a id=id_save></a>
 <canvas id=id_result style="display:none" width=1100 height="620">브라우저가 캔버스를 지원하지 않습니다.</canvas>
-<canvas id=id_result style="display:none" width=1100 height="620">브라우저가 캔버스를 지원하지 않습니다.</canvas>
-<div style="display:none">
-<img id=id_item_thunder src="images/item_thunder.jpg">
-<img id=id_item_gum src="images/item_gum.jpg">
-<img id=id_item_plus src="images/item_plus.jpg">
-<img id=id_item_minus src="images/item_minus.jpg">
-</div>
-<!-- <div style="display:none">
-    <img src="images/user_1.png">
-    <img src="images/user_2.png">
-    <img src="images/user_3.png">
-    <img src="images/user_4.png">
-    <img src="images/user_5.png">
-    <img src="images/user_6.png">
-    <img src="images/user_7.png">
-    <img src="images/user_8.png">
-    <img src="images/user_9.png">
-    <img src="images/user_10.png">
-</div> -->
-<!-- <div>
+<!-- <div style="position: absolute; top=1000px; left=0px; height:1000px">
     <a href='https://www.freepik.com/vectors/icon'>Icon vector created by rawpixel.com - www.freepik.com</a>
 </div> -->
 </body>
