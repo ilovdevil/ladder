@@ -27,10 +27,10 @@ canvas {
     position: relative;
 }
 #id_intro {
-    top: 100px;
+    /* top: 100px;
     left: 150px;
     width: 700px;
-    height: 350px;
+    height: 350px; */
     border: 1px solid white;
     background-color:burlywood;
     position: absolute;
@@ -63,8 +63,8 @@ const TYPE_MINUS        =   3;
 
 const MAX_PLAYER        =   10;     // 최대 인원수
 const MAX_LADDER        =   20;     // 최대  가로줄 갯수
-const LAD_TOP           =   30;
-const LAD_LEFT          =   50;
+const LAD_TOP           =   30;     // 첫번째 세로줄 위치
+const LAD_LEFT          =   50;     // 첫번째 세로줄 위치
 const MOVE_TICK         =   2;
 
 const DIR_UP            =   0;
@@ -222,6 +222,14 @@ function fInit()
     }
 
     drawLadder( nPlayer );
+}
+
+function initSize()
+{
+
+    document.getElementById("id_intro").style.width = window.innerWidth - sizeRight + "px";
+    document.getElementById("id_intro").style.height = (window.innerHeight - sizeHeight) + "px";
+
 }
 
 function drawLadder( nPlayer )
@@ -620,6 +628,45 @@ function play()
     }
 }
 </script>
+
+<script type="text/javascript">
+    function sendLink() {
+      Kakao.Link.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: '딸기 치즈 케익',
+          description: '#케익 #딸기 #삼평동 #카페 #분위기 #소개팅',
+          imageUrl:
+            'http://k.kakaocdn.net/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png',
+          link: {
+            mobileWebUrl: 'https://developers.kakao.com',
+            webUrl: 'https://developers.kakao.com',
+          },
+        },
+        social: {
+          likeCount: 286,
+          commentCount: 45,
+          sharedCount: 845,
+        },
+        buttons: [
+          {
+            title: '웹으로 보기',
+            link: {
+              mobileWebUrl: 'https://developers.kakao.com',
+              webUrl: 'https://developers.kakao.com',
+            },
+          },
+        //   {
+        //     title: '앱으로 보기',
+        //     link: {
+        //       mobileWebUrl: 'https://developers.kakao.com',
+        //       webUrl: 'https://developers.kakao.com',
+        //     },
+        //   },
+        ],
+      })
+    }
+</script>
 </head>
 <body onLoad="document.getElementById('id_reset').click()" style="overflow:hidden">
 <div style="display:none">
@@ -730,6 +777,9 @@ function play()
             <button onClick="start()">시작</button>
             <button onClick="stop()">중지</button>
             <!-- <button onClick="save()">저장</button> -->
+            <a id="kakao-link-btn" href="javascript:sendLink()">
+                <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png"/>
+            </a>
         </td>
     </tr>
 </table>
@@ -745,67 +795,41 @@ function play()
 </span>
 <a id=id_save></a>
 <canvas id=id_result style="display:none" width=1100 height="620">브라우저가 캔버스를 지원하지 않습니다.</canvas>
-<div style="position: absolute; top:650px; left:0px;">
+<div style="position:absolute; top:95%; left:0px;">
     <a href='https://www.freepik.com/vectors/icon'>Icon vector created by rawpixel.com - www.freepik.com</a>
 </div>
+</body>
 <script>
+function initSize()
+{
     var sizeRight = 250;
-    var sizeHeight = 530;
+    var sizeHeight = 100;
 
     var aCanvasList = [ "id_can", "id_prize", "id_item" ];
     for( var i=0; i<aCanvasList.length; i++ ) {
         document.getElementById(aCanvasList[i]).width = window.innerWidth - sizeRight;
-        document.getElementById(aCanvasList[i]).height = sizeHeight;
+        document.getElementById(aCanvasList[i]).height = window.innerHeight - sizeHeight;
     }
     for( var i=1; i<=10; i++ ) {
         document.getElementById("id_player_"+i).width = window.innerWidth - sizeRight;
-        document.getElementById("id_player_"+i).height = sizeHeight;
+        document.getElementById("id_player_"+i).height = window.innerHeight - sizeHeight;
     }
-    document.getElementById("id_ladder").style.width = window.innerWidth - sizeRight + "px";
-    document.getElementById("id_ladder").style.height = sizeHeight + "px";
+    document.getElementById("id_ladder").style.width = (window.innerWidth - sizeRight) + "px";
+    document.getElementById("id_ladder").style.height = (window.innerHeight - sizeHeight) + "px";
+
+    var nPlayer = parseInt( document.getElementById("id_player").value );
+    gCanvas = document.getElementById("id_can");
+    gCtx = gCanvas.getContext("2d");
+
+    gnDiffH = parseInt( (gCanvas.width-(LAD_LEFT*2)) / (nPlayer-1) );
+    gnDiffV = parseInt( (gCanvas.height-(LAD_TOP*2)) / (MAX_LADDER-1) );
+
+console.log( gCanvas.height + " , " + parseInt(gCanvas.height * 0.2) + " , " + parseInt(gCanvas.height * 0.6));
+    document.getElementById("id_intro").style.top   = parseInt(gCanvas.height * 0.2) + "px";
+    document.getElementById("id_intro").style.left  = (LAD_LEFT + (gnDiffH/2) - 10) + "px";
+    document.getElementById("id_intro").style.width = (((nPlayer-2) * gnDiffH) + 30) + "px";
+    document.getElementById("id_intro").style.height = parseInt(gCanvas.height * 0.6) + "px";
+}
+initSize()
 </script>
-<a id="kakao-link-btn" href="javascript:sendLink()">
-    <img
-      src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png"
-    />
-  </a>
-  <script type="text/javascript">
-    function sendLink() {
-      Kakao.Link.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: '딸기 치즈 케익',
-          description: '#케익 #딸기 #삼평동 #카페 #분위기 #소개팅',
-          imageUrl:
-            'http://k.kakaocdn.net/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png',
-          link: {
-            mobileWebUrl: 'https://developers.kakao.com',
-            webUrl: 'https://developers.kakao.com',
-          },
-        },
-        social: {
-          likeCount: 286,
-          commentCount: 45,
-          sharedCount: 845,
-        },
-        buttons: [
-          {
-            title: '웹으로 보기',
-            link: {
-              mobileWebUrl: 'https://developers.kakao.com',
-              webUrl: 'https://developers.kakao.com',
-            },
-          },
-          {
-            title: '앱으로 보기',
-            link: {
-              mobileWebUrl: 'https://developers.kakao.com',
-              webUrl: 'https://developers.kakao.com',
-            },
-          },
-        ],
-      })
-    }
-  </script>
-</body>
 </html>
