@@ -5,8 +5,8 @@
 <title>복불복 사디리</title>
 <style>
 #id_ladder {
-    width: 1100px;
-    height: 620px;
+    /* width: 800px;
+    height: 620px; */
     /* border: 1px solid black; */
     /* overflow: auto; */
     background-color: black;
@@ -20,11 +20,20 @@ canvas {
 }
 #id_money {
     width: 230px;
-    height: 620px;
-    border: 1px solid black;
+    /* height: 620px; */
+    /* border: 1px solid black; */
     /* background-color: black; */
     float: left;
     position: relative;
+}
+#id_intro {
+    top: 100px;
+    left: 150px;
+    width: 700px;
+    height: 350px;
+    border: 1px solid white;
+    background-color:burlywood;
+    position: absolute;
 }
 </style>
 
@@ -48,8 +57,8 @@ const TYPE_SPDDN        =   1;
 const TYPE_PLUS         =   2;
 const TYPE_MINUS        =   3;
 
-const MAX_PLAYER        =   10;
-const MAX_LADDER        =   30;
+const MAX_PLAYER        =   10;     // 최대 인원수
+const MAX_LADDER        =   20;     // 최대  가로줄 갯수
 const LAD_TOP           =   30;
 const LAD_LEFT          =   50;
 const MOVE_TICK         =   2;
@@ -60,6 +69,8 @@ const DIR_DOWN          =   2;
 const DIR_LEFT          =   3;
 
 const DFT_SPEED         =   20;
+
+const BACK_COLOR        =   "black";
 
 var gCanvas, gCtx;
 
@@ -73,6 +84,8 @@ var gSound = new Audio( "./images/Sound/ucw_chat.wav" );
 
 function fInit()
 {
+    document.getElementById("id_intro").style.display = "";
+
     var nPlayer = parseInt( document.getElementById("id_player").value );
     if( nPlayer < 2  ||  nPlayer > 10 ) {
         alert( "적당히 합시다." );
@@ -125,7 +138,7 @@ function fInit()
     var nEdge, nEdgeNo;
     var nEdgeCount = 0;
     for( var i=0; i<nPlayer-1; i++ ) {
-        var nEdge = 3 + parseInt(Math.random() * 8);
+        var nEdge = 3 + parseInt(Math.random() * 6);
         for( var j=0; j<nEdge; j++ ) {
             nEdgeNo = 2 + parseInt(Math.random() * (MAX_LADDER-4));
 
@@ -187,7 +200,7 @@ function fInit()
     // 메인창 Clear
     gCtx.clearRect( 0, 0, gCanvas.width, gCanvas.height );
     gCtx.beginPath();
-    gCtx.fillStyle = "gray";
+    gCtx.fillStyle = BACK_COLOR;
     gCtx.fillRect( 0, 0, gCanvas.width, gCanvas.height );
     gCtx.stroke();
 
@@ -200,7 +213,7 @@ function fInit()
     for( var i=0; i<aCanvas.length; i++ ) {
         canvas = document.getElementById( aCanvas[i] );
         ctx = canvas.getContext("2d");
-        ctx.fillStyle = "gray";
+        ctx.fillStyle = BACK_COLOR;
         ctx.clearRect( 0, 0, canvas.width, canvas.height );
     }
 
@@ -419,7 +432,7 @@ function divideMoney()
     var canvas = document.getElementById("id_prize");
     var ctx = canvas.getContext("2d");
 
-    ctx.fillStyle = "gray";
+    ctx.fillStyle = BACK_COLOR;
     ctx.clearRect( 0, 0, canvas.width, canvas.height );
 
     ctx.fillStyle = "white";
@@ -440,6 +453,8 @@ function divideMoney()
 
 function start()
 {
+    document.getElementById("id_intro").style.display = "none";
+
     if( !gtTimer ) {
         gtTimer = setInterval( play, 2 );
     }
@@ -602,7 +617,7 @@ function play()
 }
 </script>
 </head>
-<body onLoad="document.getElementById('id_reset').click()">
+<body onLoad="document.getElementById('id_reset').click()" style="overflow:hidden">
 <div style="display:none">
     <img id=id_user_1 src="images/user_1.png">
     <img id=id_user_2 src="images/user_2.png">
@@ -621,27 +636,27 @@ function play()
     <img id=id_item_minus src="images/item_minus.jpg">
 </div>
 <div id=id_ladder>
-    <canvas id=id_can width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_1 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_2 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_3 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_4 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_5 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_6 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_7 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_8 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_9 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_player_10 width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_prize width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
-    <canvas id=id_item width=1100 height=620>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_can>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_1>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_2>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_3>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_4>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_5>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_6>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_7>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_8>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_9>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_player_10>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_prize>부라우저가 캔버스를 지원하지 않습니다.</canvas>
+    <canvas id=id_item>부라우저가 캔버스를 지원하지 않습니다.</canvas>
 </div>
 <div id=id_money>
 <table border=1 cellpadding=0 width=100%>
     <tr style="background-color:black">
         <th align=center colspan=2><font color="white">게임 설정</font></th>
     </tr>
-    <tr>
-        <td align=center>게임 유형</td>
+    <tr style="display:none">
+        <td align=center>사다리 유형</td>
         <td>
             <select id=id_type>
                 <option value=1>일반사다리</option>
@@ -651,10 +666,21 @@ function play()
         </td>
     </tr>
     <tr>
+        <td align=center>게임 유형</td>
+        <td>
+            <select id=id_kind>
+                <option value=1 selected>돈 모으기(뿜빠이)</option>
+                <option value=2>할까 / 말까</option>
+                <option value=3>갈까 / 말까</option>
+                <option value=4>먹어 / 안먹어</option>
+                <option value=5>나가 / 안나가</option>
+            </select>
+        </td>
+    </tr>
+    <tr>
         <td align=center>PLAYER 수</td>
         <td>
             <input type=text id=id_player size=1 value=5>
-            <button id=id_reset onClick="fInit(); divideMoney();">리셋</button>
         </td>
     </tr>
 </table>
@@ -696,17 +722,86 @@ function play()
 <table border=0 cellpadding=0 width=100%>
     <tr>
         <td width=100% align=center>
+            <button id=id_reset onClick="fInit(); divideMoney();">리셋</button>
             <button onClick="start()">시작</button>
             <button onClick="stop()">중지</button>
-            <button onClick="save()">저장</button>
+            <!-- <button onClick="save()">저장</button> -->
         </td>
     </tr>
 </table>
 </div>
+<span id="id_intro">
+        사다리!<br>
+        줄만 잘서면 되는 세상은 이제 끝!<br>
+        스피드에 아이템까지 가미하여 재미 UP! 긴장감 UP!<br><p></p>
+
+        먹을까 말까, 해 말어, 갈까 말까<br>
+        고민해 봐야 답도 없는 고민<br>
+        걍 돌려 보자고~~<br>
+</span>
 <a id=id_save></a>
 <canvas id=id_result style="display:none" width=1100 height="620">브라우저가 캔버스를 지원하지 않습니다.</canvas>
-<!-- <div style="position: absolute; top=1000px; left=0px; height:1000px">
+<div style="position: absolute; top:650px; left:0px;">
     <a href='https://www.freepik.com/vectors/icon'>Icon vector created by rawpixel.com - www.freepik.com</a>
-</div> -->
+</div>
+<script>
+    var sizeRight = 250;
+    var sizeHeight = 530;
+
+    var aCanvasList = [ "id_can", "id_prize", "id_item" ];
+    for( var i=0; i<aCanvasList.length; i++ ) {
+        document.getElementById(aCanvasList[i]).width = window.innerWidth - sizeRight;
+        document.getElementById(aCanvasList[i]).height = sizeHeight;
+    }
+    for( var i=1; i<=10; i++ ) {
+        document.getElementById("id_player_"+i).width = window.innerWidth - sizeRight;
+        document.getElementById("id_player_"+i).height = sizeHeight;
+    }
+    document.getElementById("id_ladder").style.width = window.innerWidth - sizeRight + "px";
+    document.getElementById("id_ladder").style.height = sizeHeight + "px";
+</script>
+<a id="kakao-link-btn" href="javascript:sendLink()">
+    <img
+      src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png"
+    />
+  </a>
+  <script type="text/javascript">
+    function sendLink() {
+      Kakao.Link.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: '딸기 치즈 케익',
+          description: '#케익 #딸기 #삼평동 #카페 #분위기 #소개팅',
+          imageUrl:
+            'http://k.kakaocdn.net/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png',
+          link: {
+            mobileWebUrl: 'https://developers.kakao.com',
+            webUrl: 'https://developers.kakao.com',
+          },
+        },
+        social: {
+          likeCount: 286,
+          commentCount: 45,
+          sharedCount: 845,
+        },
+        buttons: [
+          {
+            title: '웹으로 보기',
+            link: {
+              mobileWebUrl: 'https://developers.kakao.com',
+              webUrl: 'https://developers.kakao.com',
+            },
+          },
+          {
+            title: '앱으로 보기',
+            link: {
+              mobileWebUrl: 'https://developers.kakao.com',
+              webUrl: 'https://developers.kakao.com',
+            },
+          },
+        ],
+      })
+    }
+  </script>
 </body>
 </html>
