@@ -36,8 +36,12 @@ canvas {
     position: absolute;
 }
 </style>
-
+<script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
 <script language=JavaScript>
+Kakao.init('853c1c88cbacaf21bc430b6c0898b10c');
+Kakao.isInitialized();
+console.log(Kakao.isInitialized());
+
 /*
     아이템 : 껌(속도감소), 바나나(속도증가), 모래시계(화면뒤집기)
     복불복 : 줄(세로선)의 재료를 다양하게(얼음줄(속도UP), 밧줄(속도DOWN), 천줄(사다리끊어짐), 탯줄(짱!) 등)
