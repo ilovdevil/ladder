@@ -65,7 +65,7 @@ const MAX_PLAYER        =   10;     // 최대 인원수
 const MAX_LADDER        =   20;     // 최대  가로줄 갯수
 const LAD_TOP           =   30;     // 첫번째 세로줄 위치
 const LAD_LEFT          =   50;     // 첫번째 세로줄 위치
-const MOVE_TICK         =   2;
+const MOVE_TICK         =   4;
 
 const DIR_UP            =   0;
 const DIR_RIGHT         =   1;
@@ -86,8 +86,20 @@ var gPlayer, gItem, gMoney, gCollectAmt;
 
 var gSound = new Audio( "./images/Sound/ucw_chat.wav" );
 
+
+
+//************************ 삭제하자
+var gParam;
 function fInit()
 {
+    var bParam = false;
+    if( gParam ) {
+        var param = JSON.parse(decodeURIComponent(gParam));
+        console.log( "***************************" );
+        console.log( param );
+        bParam = true;
+    }
+
     document.getElementById("id_intro").style.display = "";
 
     var nPlayer = parseInt( document.getElementById("id_player").value );
@@ -103,14 +115,6 @@ function fInit()
     gCanvas = document.getElementById("id_can");
     gCtx = gCanvas.getContext("2d");
 
-    gLadder = new Array( nPlayer );
-    for( var i=0; i<nPlayer; i++ ) {
-        gLadder[i] = new Array( MAX_LADDER );
-        for( var j=0; j<MAX_LADDER; j++ ) {
-            gLadder[i][j] = 0;
-        }
-    }
-
     gnDiffH = parseInt( (gCanvas.width-(LAD_LEFT*2)) / (nPlayer-1) );
     gnDiffV = parseInt( (gCanvas.height-(LAD_TOP*2)) / (MAX_LADDER-1) );
 
@@ -120,84 +124,103 @@ function fInit()
     if( gnDiffV % 2 )  gnDiffV++;
     console.log( "가로간격 : " + gnDiffH + " , 세로간격 : " + gnDiffV );
 
-    gPlayer = [];
-    for( var i=0; i<nPlayer; i++ ) {
-        gPlayer[i] = {};
-        gPlayer[i].canvas   = document.getElementById("id_player_" + (i+1));
-        gPlayer[i].ctx      = gPlayer[i].canvas.getContext("2d");
-        gPlayer[i].img      = document.getElementById("id_user_"+(i+1));
-        gPlayer[i].x        = LAD_LEFT + (i*gnDiffH) - 10;
-        gPlayer[i].y        = LAD_TOP - 10;
-        gPlayer[i].direct   = DIR_DOWN;
-        if( nType == 1 ) {
-            gPlayer[i].speed = DFT_SPEED;
-        }
-        else {
-            gPlayer[i].speed = 1 + parseInt(Math.random() * 41);
-            if( gPlayer[i].speed % 2 )  gPlayer[i].speed++;
-        }
-    }
-
-    // Edge(가로선) 생성
-    var nEdge, nEdgeNo;
-    var nEdgeCount = 0;
-    for( var i=0; i<nPlayer-1; i++ ) {
-        var nEdge = 3 + parseInt(Math.random() * 6);
-        for( var j=0; j<nEdge; j++ ) {
-            nEdgeNo = 2 + parseInt(Math.random() * (MAX_LADDER-4));
-
-            if( gLadder[i][nEdgeNo] != 0 ) {
-                j--; continue;
+    if( !bParam ) {
+        // 1. Player 초기화
+        gPlayer = [];
+        for( var i=0; i<nPlayer; i++ ) {
+            gPlayer[i] = {};
+            gPlayer[i].canvas   = document.getElementById("id_player_" + (i+1));
+            gPlayer[i].ctx      = gPlayer[i].canvas.getContext("2d");
+            gPlayer[i].img      = document.getElementById("id_user_"+(i+1));
+            gPlayer[i].x        = LAD_LEFT + (i*gnDiffH) - 10;
+            gPlayer[i].y        = LAD_TOP - 10;
+            gPlayer[i].direct   = DIR_DOWN;
+            if( nType == 1 ) {
+                gPlayer[i].speed = DFT_SPEED;
             }
-
-            gLadder[i][nEdgeNo] = i + 2;
-            gLadder[i+1][nEdgeNo] = i+1;
-            nEdgeCount++;
+            else {
+                gPlayer[i].speed = 1 + parseInt(Math.random() * 11);
+                if( gPlayer[i].speed % 2 )  gPlayer[i].speed++;
+            }
         }
-    }
 
-    // 아이템 생성
-    gItem = [];
-    var nItem = parseInt(nPlayer * ( 40 + parseInt(Math.random() * 61) ) / 100);  // 아이템갯수 = Player수 * (40~100%);
-    var nEdgeNo;
-    for( var i=0; i<nItem; i++ ) {
-        // 아이템이 놓일 위치를 선정한다.
-        while( 1 ) {
-            var j;
-            nEdgeNo = parseInt(Math.random() * nEdgeCount);
-            for( j=0; j<gItem.length; j++ ) {
-                if( gItem[j].edge_no == nEdgeNo ) {
+        // 2. Edge(가로선) 초기화
+        gLadder = new Array( nPlayer );
+        for( var i=0; i<nPlayer; i++ ) {
+            gLadder[i] = new Array( MAX_LADDER );
+            for( var j=0; j<MAX_LADDER; j++ ) {
+                gLadder[i][j] = 0;
+            }
+        }
+
+        var nEdge, nEdgeNo;
+        var nEdgeCount = 0;
+        for( var i=0; i<nPlayer-1; i++ ) {
+            var nEdge = 3 + parseInt(Math.random() * 6);
+            for( var j=0; j<nEdge; j++ ) {
+                nEdgeNo = 2 + parseInt(Math.random() * (MAX_LADDER-4));
+
+                if( gLadder[i][nEdgeNo] != 0 ) {
+                    j--; continue;
+                }
+
+                gLadder[i][nEdgeNo] = i + 2;
+                gLadder[i+1][nEdgeNo] = i+1;
+                nEdgeCount++;
+            }
+        }
+
+        // 3. 아이템 초기화
+        gItem = [];
+        var nItem = parseInt(nPlayer * ( 40 + parseInt(Math.random() * 61) ) / 100);  // 아이템갯수 = Player수 * (40~100%);
+        var nEdgeNo;
+        for( var i=0; i<nItem; i++ ) {
+            // 아이템이 놓일 위치를 선정한다.
+            while( 1 ) {
+                var j;
+                nEdgeNo = parseInt(Math.random() * nEdgeCount);
+                for( j=0; j<gItem.length; j++ ) {
+                    if( gItem[j].edge_no == nEdgeNo ) {
+                        break;
+                    }
+                }
+                if( j == gItem.length ) {
                     break;
                 }
             }
-            if( j == gItem.length ) {
-                break;
+            
+            gItem[i] = {};
+            gItem[i].edge_no    = nEdgeNo;
+            gItem[i].type       = parseInt(Math.random() * 4 );
+            switch( gItem[i].type ) {
+                case TYPE_SPDUP : gItem[i].img = document.getElementById("id_item_thunder"); break;
+                case TYPE_SPDDN : gItem[i].img = document.getElementById("id_item_gum"); break;
+                case TYPE_PLUS  : gItem[i].img = document.getElementById("id_item_plus"); break;
+                case TYPE_MINUS : gItem[i].img = document.getElementById("id_item_minus"); break;
             }
-        }
-        
-        gItem[i] = {};
-        gItem[i].edge_no    = nEdgeNo;
-        gItem[i].type       = parseInt(Math.random() * 4 );
-        switch( gItem[i].type ) {
-            case TYPE_SPDUP : gItem[i].img = document.getElementById("id_item_thunder"); break;
-            case TYPE_SPDDN : gItem[i].img = document.getElementById("id_item_gum"); break;
-            case TYPE_PLUS  : gItem[i].img = document.getElementById("id_item_plus"); break;
-            case TYPE_MINUS : gItem[i].img = document.getElementById("id_item_minus"); break;
-        }
-        gItem[i].player     = -1;       // 아이템을 획득한 Player
+            gItem[i].player     = -1;       // 아이템을 획득한 Player
 
-        console.log( "item-" + (i+1) + " : " + gItem[i].edge_no + " , " + gItem[i].type );
+            console.log( "item-" + (i+1) + " : " + gItem[i].edge_no + " , " + gItem[i].type );
+        }
+
+        // var log = "";
+        // for( var i=0; i<MAX_LADDER; i++ ) {
+        //     log = "";
+        //     for( var j=0; j<nPlayer; j++ ) {
+        //         log += gLadder[j][i] + " , ";
+        //     }
+        //     console.log( log );
+        // }
+
+        // 4. 배분금액 초기화
+        divideMoney()
     }
 
-    // var log = "";
-    // for( var i=0; i<MAX_LADDER; i++ ) {
-    //     log = "";
-    //     for( var j=0; j<nPlayer; j++ ) {
-    //         log += gLadder[j][i] + " , ";
-    //     }
-    //     console.log( log );
-    // }
+    drawLadder( nPlayer );
+}
 
+function drawLadder( nPlayer )
+{
     if( gtTimer )  clearInterval(gtTimer);
     gtTimer = null;
 
@@ -221,19 +244,7 @@ function fInit()
         ctx.clearRect( 0, 0, canvas.width, canvas.height );
     }
 
-    drawLadder( nPlayer );
-}
 
-function initSize()
-{
-
-    document.getElementById("id_intro").style.width = window.innerWidth - sizeRight + "px";
-    document.getElementById("id_intro").style.height = (window.innerHeight - sizeHeight) + "px";
-
-}
-
-function drawLadder( nPlayer )
-{
     // 1. 세로선
     for( var i=0; i<nPlayer; i++ ) {
         gCtx.strokeStyle = "white";
@@ -263,7 +274,29 @@ function drawLadder( nPlayer )
         gPlayer[i].ctx.stroke();
     }
 
-    // 4. 아이템 표시
+    // 4. 금액 표시
+    var canvas = document.getElementById("id_prize");
+    var ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = BACK_COLOR;
+    ctx.clearRect( 0, 0, canvas.width, canvas.height );
+
+    ctx.fillStyle = "white";
+    ctx.font = "bold 15px 굴림체";
+    for( var i=0; i<gMoney.length; i++ ) {
+        if( gMoney[i] == 99999999 ) {
+            ctx.fillText( "심부름", gPlayer[i].x-15, canvas.height-LAD_TOP+20 );
+        }
+        else if( gMoney[i] == 99999998 ) {
+            ctx.fillText( "0", gPlayer[i].x+6, canvas.height-LAD_TOP+20 );
+        }
+        else {
+            ctx.fillText( gMoney[i], gPlayer[i].x-5, canvas.height-LAD_TOP+20 );
+        }
+    }
+    ctx.stroke();
+
+    // 5. 아이템 표시
     var oType = document.getElementById("id_type");
     var nType = oType.options[oType.selectedIndex].value;
 
@@ -307,7 +340,7 @@ function readyPlayer()
 
     html += "<table border=1 cellpadding=0 width=100%>" +
             "   <tr style='background-color:black'>" +
-            "       <th align=center colspan=5><font color='white'>라인 선택</font></th>" +
+            "       <th align=center colspan=5><font color='white'>라인 설정</font></th>" +
             "   </tr>";
     
     for( var i=0; i<gPlayer.length; i++ ) {
@@ -327,12 +360,12 @@ function readyPlayer()
 
 function divideMoney()
 {
-    var nTarget = parseInt(document.getElementById("id_target").value.trim());
-    var nUnit = parseInt(document.getElementById("id_unit").options[document.getElementById("id_unit").selectedIndex].value);
-    var bAllowZero = document.getElementById("id_allow_zero").checked;
+    var nTarget     = parseInt(document.getElementById("id_target").value.trim());
+    var nUnit       = parseInt(document.getElementById("id_unit").options[document.getElementById("id_unit").selectedIndex].value);
+    var bAllowZero  = document.getElementById("id_allow_zero").checked;
     var bAllowParasite = document.getElementById("id_allow_parasite").checked;
-    var oType = document.getElementById("id_type");
-    var nType = oType.options[oType.selectedIndex].value;
+    var oType       = document.getElementById("id_type");
+    var nType       = oType.options[oType.selectedIndex].value;
 
     if( document.getElementById("id_target").value.trim().length < 4  ||  nTarget < nUnit ) {
         alert( "배분단위에 비해 목표금액이 너무 적습니다." );
@@ -422,7 +455,7 @@ function divideMoney()
     }
 
     // 잔돈 배분
-    if( nType == 1 ) {
+    //if( nType == 1 ) {
         nChoicePlayer = parseInt( Math.random() * nPlayer );
 
         order = -1;
@@ -435,32 +468,11 @@ function divideMoney()
                 }
             }
         }
-    }
+    //}
 
     for( var i=0; i<gMoney.length; i++ ) {
         console.log( i + " : " + gMoney[i] );
     }
-
-    var canvas = document.getElementById("id_prize");
-    var ctx = canvas.getContext("2d");
-
-    ctx.fillStyle = BACK_COLOR;
-    ctx.clearRect( 0, 0, canvas.width, canvas.height );
-
-    ctx.fillStyle = "white";
-    ctx.font = "bold 15px 굴림체";
-    for( var i=0; i<gMoney.length; i++ ) {
-        if( gMoney[i] == 99999999 ) {
-            ctx.fillText( "심부름", gPlayer[i].x-15, canvas.height-LAD_TOP+20 );
-        }
-        else if( gMoney[i] == 99999998 ) {
-            ctx.fillText( "0", gPlayer[i].x+6, canvas.height-LAD_TOP+20 );
-        }
-        else {
-            ctx.fillText( gMoney[i], gPlayer[i].x-5, canvas.height-LAD_TOP+20 );
-        }
-    }
-    ctx.stroke();
 }
 
 function start()
@@ -468,7 +480,7 @@ function start()
     document.getElementById("id_intro").style.display = "none";
 
     if( !gtTimer ) {
-        gtTimer = setInterval( play, 2 );
+        gtTimer = setInterval( play, 1 );
     }
 }
 
@@ -537,8 +549,8 @@ function play()
     var oType = document.getElementById("id_type");
     var nType = oType.options[oType.selectedIndex].value;
 
-    gTime += 2;
-    for( var i=0; i<gPlayer.length;i ++ ) {
+    gTime += 1;
+    for( var i=0; i<gPlayer.length; i++ ) {
         if( gTime % gPlayer[i].speed == 0  &&  gPlayer[i].y <= (gCanvas.height-LAD_TOP-20) ) {
             gPlayer[i].ctx.clearRect( gPlayer[i].x, gPlayer[i].y-10, gPlayer[i].img.width+20, gPlayer[i].img.height+20 );
 
@@ -630,30 +642,48 @@ function play()
 </script>
 
 <script type="text/javascript">
-    function sendLink() {
+function sendLink() {
+    // 사다리를 리셋한다.
+    document.getElementById('id_reset').click();
+
+    var param = encodeURIComponent(JSON.stringify({
+        player: gPlayer,
+        ladder: gLadder,
+        item: gItem,
+        money: gMoney
+    }));
+
+    console.log( param );
+    console.log( param.length );
+
+gParam = param;
+    fInit();
+    
+    return;
+
       Kakao.Link.sendDefault({
         objectType: 'feed',
         content: {
-          title: '딸기 치즈 케익',
-          description: '#케익 #딸기 #삼평동 #카페 #분위기 #소개팅',
+          title: '복불복 사다리',
+          description: '#사다리 #복불복 #스피드 #아이템',
           imageUrl:
-            'http://k.kakaocdn.net/dn/Q2iNx/btqgeRgV54P/VLdBs9cvyn8BJXB3o7N8UK/kakaolink40_original.png',
+            'https://speed-ladder.netlify.app/images/main_black_256.jpg',
           link: {
-            mobileWebUrl: 'https://developers.kakao.com',
-            webUrl: 'https://developers.kakao.com',
+            mobileWebUrl: 'https://speed-ladder.netlify.app/index.html',
+            webUrl: 'https://speed-ladder.netlify.app/index.html',
           },
         },
-        social: {
-          likeCount: 286,
-          commentCount: 45,
-          sharedCount: 845,
-        },
+        // social: {
+        //   likeCount: 286,
+        //   commentCount: 45,
+        //   sharedCount: 845,
+        // },
         buttons: [
           {
             title: '웹으로 보기',
             link: {
-              mobileWebUrl: 'https://developers.kakao.com',
-              webUrl: 'https://developers.kakao.com',
+              mobileWebUrl: 'https://speed-ladder.netlify.app/index.html',
+              webUrl: 'https://speed-ladder.netlify.app/index.html',
             },
           },
         //   {
@@ -665,10 +695,10 @@ function play()
         //   },
         ],
       })
-    }
+}
 </script>
 </head>
-<body onLoad="document.getElementById('id_reset').click()" style="overflow:hidden">
+<body onLoad="document.getElementById('id_reset').click()">
 <div style="display:none">
     <img id=id_user_1 src="images/user_1.png">
     <img id=id_user_2 src="images/user_2.png">
@@ -763,9 +793,6 @@ function play()
             <input type=checkbox id=id_allow_parasite><label for=id_allow_parasite>심부름 포함</label>
         </td>
     </tr>
-    <!-- <tr>
-        <td colspan=2 align=center><button onClick="divideMoney()">금액배분</button></td>
-    </tr> -->
 </table>
 <br>
 <span id=id_player_choice></span>
@@ -773,12 +800,13 @@ function play()
 <table border=0 cellpadding=0 width=100%>
     <tr>
         <td width=100% align=center>
-            <button id=id_reset onClick="fInit(); divideMoney();">리셋</button>
+            <button id=id_reset onClick="fInit();">리셋</button>
             <button onClick="start()">시작</button>
-            <button onClick="stop()">중지</button>
+            <button onClick="stop()">중지</button><p>
             <!-- <button onClick="save()">저장</button> -->
             <a id="kakao-link-btn" href="javascript:sendLink()">
-                <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_medium.png"/>
+                <img src="images/kakao_login_medium_narrow.png" 
+                    title="위의 게임/금액/라인설정을 먼저하시고 공유할 친구들을 선택하세요"/>
             </a>
         </td>
     </tr>
@@ -824,7 +852,6 @@ function initSize()
     gnDiffH = parseInt( (gCanvas.width-(LAD_LEFT*2)) / (nPlayer-1) );
     gnDiffV = parseInt( (gCanvas.height-(LAD_TOP*2)) / (MAX_LADDER-1) );
 
-console.log( gCanvas.height + " , " + parseInt(gCanvas.height * 0.2) + " , " + parseInt(gCanvas.height * 0.6));
     document.getElementById("id_intro").style.top   = parseInt(gCanvas.height * 0.2) + "px";
     document.getElementById("id_intro").style.left  = (LAD_LEFT + (gnDiffH/2) - 10) + "px";
     document.getElementById("id_intro").style.width = (((nPlayer-2) * gnDiffH) + 30) + "px";
